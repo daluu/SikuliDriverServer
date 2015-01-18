@@ -31,9 +31,9 @@ import subprocess
 import base64
 import urllib
 from org.sikuli.script import Button, Env, Key, KeyModifier, Match, Pattern, Region, Screen
-from org.sikuli.script import ScreenImage, SikuliScript
+from org.sikuli.script import ScreenImage #, SikuliScript
 # can comment out/remove below JysonCodec reference if using Jython 2.7+
-from com.xhaus.jyson import JysonCodec as json
+#from com.xhaus.jyson import JysonCodec as json
 #import com.xhaus.jyson.JysonCodec as json
 
 app = Bottle()
@@ -67,6 +67,7 @@ def status():
 
 @app.route('/wd/hub/session', method='POST')
 def create_session():
+    print "in session"
     #process desired capabilities
     request_data = request.body.read()
     dc = json.loads(request_data).get('desiredCapabilities')
@@ -80,7 +81,7 @@ def create_session():
         newConfigFile = dc.get('defaultElementImageMapConfigFile')
         if newConfigFile is not None:
             app.element_locator_map_file = newConfigFile
-
+    print "checked dc"
     #setup session
     app.started = True
     redirect('/wd/hub/session/%s' % app.SESSION_ID)
@@ -109,8 +110,6 @@ def delete_session(session_id=''):
 
 @app.route('/wd/hub/session/<session_id>/execute', method='POST')
 def execute_script(session_id=''):
-    status = 0
-    result = ''
     request_data = request.body.read()
     try:
         script = json.loads(request_data).get('script')
@@ -128,17 +127,18 @@ def execute_script(session_id=''):
 
         script_call = "%s -r %s" % (sikuliIdeRunner,script)
         if args is not None:
-            script_call = script_call.join(" --")
+            script_call = "%s --" % script_call
             for arg in args:
-                script_call = script_call.join(" ").join(arg)
-        system(script_call)
+                script_call = "%s %s" % (script_call,arg)
+        print "script2exec: %s" % script_call
+        os.system(script_call)
     except:
         response.status = 400
-        return {'sessionId': session_id, 'status': 13, 'value': str(sys.exc_info()[0])}
+        return {'sessionId': session_id, 'status': 13, 'value': str(sys.exc_info()[1])}
 
     app_response = {'sessionId': session_id,
-        'status': status,
-        'value': result}
+        'status': 0,
+        'value': {}}
     return app_response
 
 @app.route('/wd/hub/session/<session_id>/element/<element_id>/click', method='POST')
@@ -513,27 +513,20 @@ if __name__ == '__main__':
         app.image_path = args.images_folder
     else:
         app.image_path = os.path.join(os.path.curdir,'images')
-    if args.similarity is not None:
-        app.similarity = args.similarity
-    else:
-        app.similarity = 0.7
-    if args.timeout is not None:
-        app.timeout = args.timeout
-    else:
-        app.timeout = 0
     if args.sikuli_ide_dir is not None:
         app.sikuli_ide_dir = args.sikuli_ide_dir
     else:
         app.sikuli_ide_dir = os.path.curdir
-
+    app.similarity = args.similarity
+    app.timeout = args.timeout
 
     app.config = ConfigParser.RawConfigParser()
     app.config.read(app.element_locator_map_file)
     app.SS = Screen()
     app.PT = Pattern()
     app.Buttons = Button()
-    app.Keys = Keys()
-    app.KeyMods = KeyModifiers()
+    app.Keys = Key()
+    app.KeyMods = KeyModifier()
     app.SS.setAutoWaitTimeout(app.timeout)
     app.element_counter = 0
     app.element_list = []
