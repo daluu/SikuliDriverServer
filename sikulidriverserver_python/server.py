@@ -297,6 +297,19 @@ def set_value(session_id='', element_id=''):
         'value': {}}
     return app_response
 
+@app.route('/wd/hub/session/<session_id>/element/<element_id>/text', method='GET')
+def get_text_on_element(session_id='', element_id=''):
+    try:
+        result = app.element_list[element_id].text()
+    except:
+        response.status = 400
+        return {'sessionId': session_id, 'status': 13, 'value': str(sys.exc_info()[0])}
+    
+    app_response = {'sessionId': session_id,
+        'status': 0,
+        'value': result}
+    return app_response
+
 @app.route('/wd/hub/session/<session_id>/element/<element_id>/elements', method='POST')
 def element_find_elements(session_id='', element_id=''):
     return _find_element(session_id, element_id, many=True)
@@ -471,6 +484,19 @@ def set_timeout(session_id=''):
     app_response = {'sessionId': session_id,
         'status': 0,
         'value': {}}
+    return app_response
+
+@app.route('/wd/hub/session/<session_id>/source', method='GET')
+def get_text_on_screen(session_id=''):
+    try:
+        result = app.SS.text()
+    except:
+        response.status = 400
+        return {'sessionId': session_id, 'status': 13, 'value': str(sys.exc_info()[0])}
+    
+    app_response = {'sessionId': session_id,
+        'status': 0,
+        'value': result}
     return app_response
 
 @app.error(404)
