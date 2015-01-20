@@ -102,6 +102,9 @@ def get_session(session_id=''):
 
 @app.route('/wd/hub/session/<session_id>', method='DELETE')
 def delete_session(session_id=''):
+    # reset tracking elements in a list for next new session
+    app.element_counter = 0
+    app.element_list = []
     app.started = False
     app_response = {'sessionId': session_id,
                 'status': 0,
